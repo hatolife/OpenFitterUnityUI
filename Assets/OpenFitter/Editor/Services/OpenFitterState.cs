@@ -16,6 +16,7 @@ namespace OpenFitter.Editor.Services
         private const string PrefKeyPrefix = "OpenFitterWindow.";
         private const string WizardStepKey = "OpenFitter.WizardStep";
         private const string LastOutputPathKey = "LastOutputPath";
+        private const string ExecutionPausedAfterCancelKey = "ExecutionPausedAfterCancel";
 
         // Backing Fields for Persistence
         private string _inputFbx = "";
@@ -36,6 +37,7 @@ namespace OpenFitter.Editor.Services
         // Runtime State
         private WizardStep _wizardStep = WizardStep.EnvironmentSetup;
         private string _lastOutputPath = "";
+        private bool _executionPausedAfterCancel;
         public List<BlendShapeEntry> BlendShapeEntries { get; private set; } = new List<BlendShapeEntry>();
 
         // Events
@@ -55,6 +57,7 @@ namespace OpenFitter.Editor.Services
         public event Action? OnTriangulateChanged;
         public event Action? OnWizardStepChanged;
         public event Action? OnLastOutputPathChanged;
+        public event Action? OnExecutionPausedAfterCancelChanged;
 
         public OpenFitterState()
         {
@@ -102,6 +105,7 @@ namespace OpenFitter.Editor.Services
 
             _wizardStep = (WizardStep)EditorPrefs.GetInt(WizardStepKey, 0);
             _lastOutputPath = EditorPrefs.GetString(PrefKeyPrefix + LastOutputPathKey, "");
+            _executionPausedAfterCancel = EditorPrefs.GetInt(PrefKeyPrefix + ExecutionPausedAfterCancelKey, 0) == 1;
         }
 
         public void ClearPrefs()
@@ -123,6 +127,7 @@ namespace OpenFitter.Editor.Services
 
             WizardStep = WizardStep.EnvironmentSetup;
             LastOutputPath = "";
+            ExecutionPausedAfterCancel = false;
         }
 
         public void ResetEnvironmentState()
@@ -365,6 +370,20 @@ namespace OpenFitter.Editor.Services
                     _lastOutputPath = value;
                     EditorPrefs.SetString(PrefKeyPrefix + LastOutputPathKey, value);
                     OnLastOutputPathChanged?.Invoke();
+                }
+            }
+        }
+
+        public bool ExecutionPausedAfterCancel
+        {
+            get => _executionPausedAfterCancel;
+            set
+            {
+                if (_executionPausedAfterCancel != value)
+                {
+                    _executionPausedAfterCancel = value;
+                    EditorPrefs.SetInt(PrefKeyPrefix + ExecutionPausedAfterCancelKey, value ? 1 : 0);
+                    OnExecutionPausedAfterCancelChanged?.Invoke();
                 }
             }
         }

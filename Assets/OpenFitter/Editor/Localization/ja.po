@@ -215,6 +215,9 @@ msgstr "展開後にスクリプトが見つかりませんでした。"
 msgid "Cancel"
 msgstr "キャンセル"
 
+msgid "Rerun"
+msgstr "再実行"
+
 msgid "Official Page"
 msgstr "公式ページ"
 
@@ -343,6 +346,9 @@ msgstr "エラー"
 
 msgid "Cancelled"
 msgstr "中断"
+
+msgid "Cancelled by user."
+msgstr "ユーザーにより中断されました。"
 
 msgid "Idle"
 msgstr "待機中"

@@ -16,11 +16,13 @@ namespace OpenFitter.Editor
         private readonly VisualElement stepIndicatorContainer;
         private readonly Label lblStepTitle;
         private readonly Button btnBack;
+        private readonly Button btnCancel;
         private readonly Button btnNext;
         private readonly VisualTreeAsset partsAsset;
 
         public event NavigationClickHandler? OnNextClicked;
         public event NavigationClickHandler? OnBackClicked;
+        public event NavigationClickHandler? OnCancelClicked;
 
         public OpenFitterWizardView(VisualElement root)
         {
@@ -28,11 +30,14 @@ namespace OpenFitter.Editor
             stepIndicatorContainer = root.Q<VisualElement>("step-indicators");
             lblStepTitle = root.Q<Label>("lbl-step-title");
             btnBack = root.Q<Button>("btn-back");
+            btnCancel = root.Q<Button>("btn-cancel");
             btnNext = root.Q<Button>("btn-next");
             partsAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(PartsUxmlPath);
 
             btnBack.clicked += () => OnBackClicked?.Invoke();
+            btnCancel.clicked += () => OnCancelClicked?.Invoke();
             btnNext.clicked += () => OnNextClicked?.Invoke();
+            SetCancelButtonVisible(false);
         }
 
         public VisualElement GetStepContentContainer() => stepContentContainer;
@@ -58,6 +63,10 @@ namespace OpenFitter.Editor
 
         public void ClearStepContent() => stepContentContainer.Clear();
         public void SetBackButtonEnabled(bool enabled) => btnBack.SetEnabled(enabled);
+        public void SetCancelButtonEnabled(bool enabled) => btnCancel.SetEnabled(enabled);
+        public void SetCancelButtonVisible(bool visible) =>
+            btnCancel.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+        public void SetCancelButtonText(string text) => btnCancel.text = text;
         public void SetNextButtonEnabled(bool enabled) => btnNext.SetEnabled(enabled);
         public void SetNextButtonText(string text) => btnNext.text = text;
         public void SetNextButtonVisible(bool visible) =>
@@ -93,4 +102,3 @@ namespace OpenFitter.Editor
         private enum StepIndicatorState { Completed, Current, Future }
     }
 }
-

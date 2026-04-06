@@ -16,12 +16,9 @@ namespace OpenFitter.Editor.Views
         private readonly Label lblElapsed;
         private readonly Label lblStatusBadge;
         private readonly ProgressBar progressBar;
-        private readonly Button btnCancelFitting;
         private readonly TextField lblLog;
         private readonly ScrollView logScrollView;
         private readonly StringBuilder cumulativeLog = new();
-
-        public event System.Action? OnCancelClicked;
 
         public ExecutionStepView(VisualElement parentContainer)
         {
@@ -36,11 +33,8 @@ namespace OpenFitter.Editor.Views
             lblElapsed = container.Q<Label>("lbl-elapsed")!;
             lblStatusBadge = container.Q<Label>("lbl-status-badge")!;
             progressBar = container.Q<ProgressBar>("progress-bar")!;
-            btnCancelFitting = container.Q<Button>("btn-cancel-fitting")!;
             lblLog = container.Q<TextField>("lbl-log")!;
             logScrollView = container.Q<ScrollView>("log-scroll-view")!;
-
-            btnCancelFitting.clicked += () => OnCancelClicked?.Invoke();
         }
 
         public void SetStatus(string status)
@@ -71,11 +65,6 @@ namespace OpenFitter.Editor.Views
         {
             progressBar.value = progress;
             progressBar.title = title;
-        }
-
-        public void SetCancelButtonEnabled(bool enabled)
-        {
-            btnCancelFitting.SetEnabled(enabled);
         }
 
         public void AppendLog(string log)

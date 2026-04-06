@@ -42,7 +42,6 @@ namespace OpenFitter.Editor
             fittingService.OnStatusChanged += OnStatusChanged;
             fittingService.OnStepChanged += OnStepChanged;
             fittingService.OnStateChanged += OnRunnerStateChanged;
-            stepView.OnCancelClicked += OnCancelClicked;
         }
 
         protected override void UnbindElements()
@@ -52,7 +51,6 @@ namespace OpenFitter.Editor
             fittingService.OnStatusChanged -= OnStatusChanged;
             fittingService.OnStepChanged -= OnStepChanged;
             fittingService.OnStateChanged -= OnRunnerStateChanged;
-            stepView.OnCancelClicked -= OnCancelClicked;
             UnregisterElapsedUpdate();
         }
 
@@ -61,7 +59,7 @@ namespace OpenFitter.Editor
             base.OnEnter();
             SyncElapsedUpdateRegistration();
 
-            if (CanExecuteFitting() && !fittingService.IsFitting)
+            if (CanExecuteFitting() && !fittingService.IsFitting && !stateService.ExecutionPausedAfterCancel)
             {
                 ExecuteFitting();
             }
@@ -76,7 +74,7 @@ namespace OpenFitter.Editor
 
         public override void Refresh()
         {
-            stepView.SetStatus(string.Format(I18n.Tr("Status: {0}"), fittingService.LastRunSummary));
+            stepView.SetStatus(string.Format(I18n.Tr("Status: {0}"), GetStatusSummaryForDisplay()));
             UpdateElapsedDisplay();
             UpdateStatusBadge();
             UpdateCancelButtonState();
@@ -103,6 +101,15 @@ namespace OpenFitter.Editor
 
         private void OnStatusChanged(string status)
         {
+            if (status == "Cancelled")
+            {
+                stateService.ExecutionPausedAfterCancel = true;
+            }
+            else if (status == "Completed")
+            {
+                stateService.ExecutionPausedAfterCancel = false;
+            }
+
             UpdateElapsedDisplay();
             UpdateStatusBadge();
             UpdateCancelButtonState();
@@ -128,7 +135,9 @@ namespace OpenFitter.Editor
 
         private void UpdateStatusBadge()
         {
-            var state = FittingProgressParser.AnalyzeExecutionStateStatic(fittingService.IsFitting, fittingService.LastRunSummary);
+            var state = stateService.ExecutionPausedAfterCancel && !fittingService.IsFitting
+                ? FittingExecutionState.Cancelled
+                : FittingProgressParser.AnalyzeExecutionStateStatic(fittingService.IsFitting, fittingService.LastRunSummary);
 
             switch (state)
             {
@@ -153,18 +162,51 @@ namespace OpenFitter.Editor
 
         private void UpdateCancelButtonState()
         {
-            stepView.SetCancelButtonEnabled(fittingService.IsFitting);
+            view.SetCancelButtonEnabled(CanClickExecutionActionButton());
         }
 
-        private void OnCancelClicked()
+        public void HandleExecutionActionButtonFromNavigation()
         {
-            if (!fittingService.IsFitting)
+            if (fittingService.IsFitting)
+            {
+                stateService.ExecutionPausedAfterCancel = true;
+                fittingService.CancelFitting();
+                view.SetCancelButtonEnabled(false);
+                InvokeStatusChanged();
+                return;
+            }
+
+            if (!stateService.ExecutionPausedAfterCancel)
             {
                 return;
             }
 
-            fittingService.CancelFitting();
-            stepView.SetCancelButtonEnabled(false);
+            if (!CanExecuteFitting())
+            {
+                return;
+            }
+
+            stateService.ExecutionPausedAfterCancel = false;
+            ExecuteFitting();
+            Refresh();
+            InvokeStatusChanged();
+        }
+
+        public string GetExecutionActionButtonText()
+        {
+            return stateService.ExecutionPausedAfterCancel && !fittingService.IsFitting
+                ? I18n.Tr("Rerun")
+                : I18n.Tr("Cancel");
+        }
+
+        public bool CanClickExecutionActionButton()
+        {
+            if (fittingService.IsFitting)
+            {
+                return true;
+            }
+
+            return stateService.ExecutionPausedAfterCancel && CanExecuteFitting();
         }
 
         private void SyncElapsedUpdateRegistration()
@@ -232,6 +274,7 @@ namespace OpenFitter.Editor
             UnregisterElapsedUpdate();
             if (fittingService.IsFitting)
             {
+                stateService.ExecutionPausedAfterCancel = true;
                 fittingService.CancelFitting();
             }
             fittingService.Dispose();
@@ -252,9 +295,20 @@ namespace OpenFitter.Editor
                 return;
             }
 
+            stateService.ExecutionPausedAfterCancel = false;
             fittingService.ExecuteFitting(stateService, stateService.BlendShapeEntries, configService.AvailableConfigs);
 
             stateService.LastOutputPath = fittingService.LastOutputPath;
+        }
+
+        private string GetStatusSummaryForDisplay()
+        {
+            if (stateService.ExecutionPausedAfterCancel && !fittingService.IsFitting)
+            {
+                return I18n.Tr("Cancelled by user.");
+            }
+
+            return fittingService.LastRunSummary;
         }
     }
 }

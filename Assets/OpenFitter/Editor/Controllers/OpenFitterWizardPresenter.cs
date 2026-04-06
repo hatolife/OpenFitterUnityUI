@@ -24,6 +24,7 @@ namespace OpenFitter.Editor
 
             view.OnNextClicked += OnNextClicked;
             view.OnBackClicked += OnBackClicked;
+            view.OnCancelClicked += OnCancelClicked;
 
             var initialStep = stateService.WizardStep;
 
@@ -43,6 +44,7 @@ namespace OpenFitter.Editor
         {
             view.OnNextClicked -= OnNextClicked;
             view.OnBackClicked -= OnBackClicked;
+            view.OnCancelClicked -= OnCancelClicked;
 
             currentStepPresenter?.Dispose();
             currentStepPresenter = null;
@@ -88,6 +90,16 @@ namespace OpenFitter.Editor
             {
                 NavigateToStep(prevStep);
             }
+        }
+
+        private void OnCancelClicked()
+        {
+            if (stateService.WizardStep != WizardStep.Execution || currentStepPresenter is not ExecutionStepPresenter executionStepPresenter)
+            {
+                return;
+            }
+
+            executionStepPresenter.HandleExecutionActionButtonFromNavigation();
         }
 
         private void NavigateToStep(WizardStep step)
@@ -158,6 +170,22 @@ namespace OpenFitter.Editor
             var current = stateService.WizardStep;
             bool canGoBack = current > WizardStep.EnvironmentSetup && currentStepPresenter.CanGoBack();
             view.SetBackButtonEnabled(canGoBack);
+
+            bool showCancel = current == WizardStep.Execution;
+            view.SetCancelButtonVisible(showCancel);
+            if (showCancel)
+            {
+                if (currentStepPresenter is ExecutionStepPresenter executionStepPresenter)
+                {
+                    view.SetCancelButtonText(executionStepPresenter.GetExecutionActionButtonText());
+                    view.SetCancelButtonEnabled(executionStepPresenter.CanClickExecutionActionButton());
+                }
+                else
+                {
+                    view.SetCancelButtonText(I18n.Tr("Cancel"));
+                    view.SetCancelButtonEnabled(false);
+                }
+            }
 
             view.SetNextButtonEnabled(currentStepPresenter.CanProceed());
 
