@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 
 namespace OpenFitter.Editor.Downloaders
 {
@@ -62,10 +61,18 @@ namespace OpenFitter.Editor.Downloaders
                     Directory.CreateDirectory(parentDir!);
                 }
 
-                // Move extracted content to final location
-                // If sourceDir == tempExtractPath, we can't Move top level if finalTargetPath is nested? 
-                // Actually Directory.Move works if paths are normalized.
-                Directory.Move(sourceDir, finalTargetPath);
+                // Move extracted content to final location.
+                // Directory.Move cannot cross volume boundaries on Windows, so
+                // fall back to copy+delete in that case.
+                if (AreOnSameRoot(sourceDir, finalTargetPath))
+                {
+                    Directory.Move(sourceDir, finalTargetPath);
+                }
+                else
+                {
+                    CopyDirectoryRecursively(sourceDir, finalTargetPath);
+                    Directory.Delete(sourceDir, true);
+                }
             }
             catch (Exception ex)
             {
@@ -88,6 +95,31 @@ namespace OpenFitter.Editor.Downloaders
                 }
             }
         }
+
+        private static bool AreOnSameRoot(string sourcePath, string destinationPath)
+        {
+            string sourceRoot = Path.GetPathRoot(Path.GetFullPath(sourcePath)) ?? string.Empty;
+            string destinationRoot = Path.GetPathRoot(Path.GetFullPath(destinationPath)) ?? string.Empty;
+            return string.Equals(sourceRoot, destinationRoot, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void CopyDirectoryRecursively(string sourceDir, string destinationDir)
+        {
+            Directory.CreateDirectory(destinationDir);
+
+            foreach (string filePath in Directory.GetFiles(sourceDir))
+            {
+                string fileName = Path.GetFileName(filePath);
+                string destinationFilePath = Path.Combine(destinationDir, fileName);
+                File.Copy(filePath, destinationFilePath, overwrite: true);
+            }
+
+            foreach (string subDirPath in Directory.GetDirectories(sourceDir))
+            {
+                string subDirName = Path.GetFileName(subDirPath);
+                string destinationSubDirPath = Path.Combine(destinationDir, subDirName);
+                CopyDirectoryRecursively(subDirPath, destinationSubDirPath);
+            }
+        }
     }
 }
-
