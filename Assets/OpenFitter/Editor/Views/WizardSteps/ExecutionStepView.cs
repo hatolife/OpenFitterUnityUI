@@ -13,6 +13,7 @@ namespace OpenFitter.Editor.Views
 
         private readonly VisualElement container;
         private readonly Label lblStatus;
+        private readonly Label lblElapsed;
         private readonly Label lblStatusBadge;
         private readonly ProgressBar progressBar;
         private readonly Button btnCancelFitting;
@@ -32,6 +33,7 @@ namespace OpenFitter.Editor.Views
 
             // Get UI elements
             lblStatus = container.Q<Label>("lbl-status")!;
+            lblElapsed = container.Q<Label>("lbl-elapsed")!;
             lblStatusBadge = container.Q<Label>("lbl-status-badge")!;
             progressBar = container.Q<ProgressBar>("progress-bar")!;
             btnCancelFitting = container.Q<Button>("btn-cancel-fitting")!;
@@ -44,6 +46,11 @@ namespace OpenFitter.Editor.Views
         public void SetStatus(string status)
         {
             lblStatus.text = status;
+        }
+
+        public void SetElapsedTime(string elapsedText)
+        {
+            lblElapsed.text = elapsedText;
         }
 
         public void SetStatusBadge(string text, string cssClass)

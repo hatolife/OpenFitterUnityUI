@@ -16,6 +16,7 @@ namespace OpenFitter.Editor
         private Process? currentProcess;
         private IFittingStrategy? currentStrategy;
         private readonly Queue<string> logQueue = new();
+        private DateTime? fittingStartTimeUtc;
 
         // Context data for strategy
         private OpenFitterState? currentState;
@@ -36,6 +37,11 @@ namespace OpenFitter.Editor
         public bool IsFitting { get; private set; }
         public string LastRunSummary { get; private set; } = "Not run";
         public string LastOutputPath { get; set; } = ""; // Set by strategies
+        public TimeSpan LastRunElapsed { get; private set; } = TimeSpan.Zero;
+        public TimeSpan CurrentElapsed =>
+            fittingStartTimeUtc.HasValue
+                ? DateTime.UtcNow - fittingStartTimeUtc.Value
+                : LastRunElapsed;
 
         public int CurrentStep => currentStrategy?.CurrentStep ?? 1;
         public int TotalSteps => currentStrategy?.TotalSteps ?? 1;
@@ -70,6 +76,8 @@ namespace OpenFitter.Editor
             }
 
             IsFitting = true;
+            fittingStartTimeUtc = DateTime.UtcNow;
+            LastRunElapsed = TimeSpan.Zero;
             OnStateChanged?.Invoke();
             OnStepChanged?.Invoke(CurrentStep, TotalSteps);
 
@@ -128,6 +136,12 @@ namespace OpenFitter.Editor
 
         internal void FinishFitting(bool success, string message, string? statusOverride = null)
         {
+            if (fittingStartTimeUtc.HasValue)
+            {
+                LastRunElapsed = DateTime.UtcNow - fittingStartTimeUtc.Value;
+                fittingStartTimeUtc = null;
+            }
+
             IsFitting = false;
             currentStrategy = null;
             currentProcess = null;

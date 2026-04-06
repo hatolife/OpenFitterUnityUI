@@ -6,6 +6,7 @@
             <ui:Label name="lbl-status-badge" text="準備中" class="status-badge" />
         </ui:VisualElement>
         <ui:Label name="lbl-status" text="Status: -" style="margin-bottom: 4px; color: rgb(136, 136, 136); font-size: 11px; margin-top: 0; margin-right: 0; margin-left: 0;" />
+        <ui:Label name="lbl-elapsed" text="経過時間: 00:00" style="margin-bottom: 6px; color: rgb(136, 136, 136); font-size: 11px; margin-top: 0; margin-right: 0; margin-left: 0;" />
         <ui:ProgressBar name="progress-bar" value="0" high-value="100" style="margin-top: 0; margin-right: 0; margin-bottom: 12px; margin-left: 0;" />
         <ui:VisualElement style="flex-direction: row; justify-content: flex-end; margin-top: 0; margin-right: 0; margin-bottom: 8px; margin-left: 0;">
             <ui:Button name="btn-cancel-fitting" text="キャンセル" class="danger-button" style="height: 30px; width: 120px;" />

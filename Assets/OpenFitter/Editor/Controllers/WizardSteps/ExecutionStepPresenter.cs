@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+using UnityEditor;
 using UnityEngine.UIElements;
 using OpenFitter.Editor.Services;
 using OpenFitter.Editor.Views;
@@ -11,6 +13,7 @@ namespace OpenFitter.Editor
         private readonly FittingService fittingService;
         private readonly IOpenFitterEnvironmentService environmentService;
         private readonly ConfigurationService configService;
+        private bool elapsedUpdateRegistered;
 
         public ExecutionStepPresenter(
             OpenFitterState stateService,
@@ -38,6 +41,7 @@ namespace OpenFitter.Editor
             fittingService.OnProgressChanged += OnProgressChanged;
             fittingService.OnStatusChanged += OnStatusChanged;
             fittingService.OnStepChanged += OnStepChanged;
+            fittingService.OnStateChanged += OnRunnerStateChanged;
             stepView.OnCancelClicked += OnCancelClicked;
         }
 
@@ -47,12 +51,15 @@ namespace OpenFitter.Editor
             fittingService.OnProgressChanged -= OnProgressChanged;
             fittingService.OnStatusChanged -= OnStatusChanged;
             fittingService.OnStepChanged -= OnStepChanged;
+            fittingService.OnStateChanged -= OnRunnerStateChanged;
             stepView.OnCancelClicked -= OnCancelClicked;
+            UnregisterElapsedUpdate();
         }
 
         public override void OnEnter()
         {
             base.OnEnter();
+            SyncElapsedUpdateRegistration();
 
             if (CanExecuteFitting() && !fittingService.IsFitting)
             {
@@ -70,6 +77,7 @@ namespace OpenFitter.Editor
         public override void Refresh()
         {
             stepView.SetStatus(string.Format(I18n.Tr("Status: {0}"), fittingService.LastRunSummary));
+            UpdateElapsedDisplay();
             UpdateStatusBadge();
             UpdateCancelButtonState();
         }
@@ -95,6 +103,7 @@ namespace OpenFitter.Editor
 
         private void OnStatusChanged(string status)
         {
+            UpdateElapsedDisplay();
             UpdateStatusBadge();
             UpdateCancelButtonState();
             InvokeStatusChanged();
@@ -104,6 +113,12 @@ namespace OpenFitter.Editor
                 stepView.SetProgress(100, "100%");
                 stateService.LastOutputPath = fittingService.LastOutputPath;
             }
+        }
+
+        private void OnRunnerStateChanged()
+        {
+            SyncElapsedUpdateRegistration();
+            UpdateElapsedDisplay();
         }
 
         private void OnStepChanged(int current, int total)
@@ -152,8 +167,69 @@ namespace OpenFitter.Editor
             stepView.SetCancelButtonEnabled(false);
         }
 
+        private void SyncElapsedUpdateRegistration()
+        {
+            if (fittingService.IsFitting)
+            {
+                RegisterElapsedUpdate();
+            }
+            else
+            {
+                UnregisterElapsedUpdate();
+            }
+        }
+
+        private void RegisterElapsedUpdate()
+        {
+            if (elapsedUpdateRegistered)
+            {
+                return;
+            }
+
+            EditorApplication.update += OnEditorUpdate;
+            elapsedUpdateRegistered = true;
+        }
+
+        private void UnregisterElapsedUpdate()
+        {
+            if (!elapsedUpdateRegistered)
+            {
+                return;
+            }
+
+            EditorApplication.update -= OnEditorUpdate;
+            elapsedUpdateRegistered = false;
+        }
+
+        private void OnEditorUpdate()
+        {
+            UpdateElapsedDisplay();
+            if (!fittingService.IsFitting)
+            {
+                UnregisterElapsedUpdate();
+            }
+        }
+
+        private void UpdateElapsedDisplay()
+        {
+            var elapsed = fittingService.IsFitting ? fittingService.CurrentElapsed : fittingService.LastRunElapsed;
+            stepView.SetElapsedTime(string.Format(I18n.Tr("Elapsed: {0}"), FormatElapsed(elapsed)));
+        }
+
+        private static string FormatElapsed(TimeSpan elapsed)
+        {
+            int totalHours = (int)elapsed.TotalHours;
+            if (totalHours > 0)
+            {
+                return $"{totalHours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+            }
+
+            return $"{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
+        }
+
         public override void Dispose()
         {
+            UnregisterElapsedUpdate();
             if (fittingService.IsFitting)
             {
                 fittingService.CancelFitting();

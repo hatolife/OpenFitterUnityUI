@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 namespace OpenFitter.Editor.Services
 {
@@ -16,6 +17,8 @@ namespace OpenFitter.Editor.Services
         public string LastRunSummary => fittingRunner.LastRunSummary;
         public string LastOutputPath => fittingRunner.LastOutputPath;
         public bool IsFitting => fittingRunner.IsFitting;
+        public TimeSpan CurrentElapsed => fittingRunner.CurrentElapsed;
+        public TimeSpan LastRunElapsed => fittingRunner.LastRunElapsed;
 
         private readonly FittingProgressParser progressParser;
 
@@ -103,5 +106,4 @@ namespace OpenFitter.Editor.Services
         }
     }
 }
-
 
