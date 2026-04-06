@@ -9,6 +9,7 @@ namespace OpenFitter.Editor.Services
         Idle,
         Processing,
         Completed,
+        Cancelled,
         Error
     }
 
@@ -87,17 +88,27 @@ namespace OpenFitter.Editor.Services
                 return FittingExecutionState.Idle;
             }
 
-            if (lastRunSummary.Contains("success") || lastRunSummary.Contains("completed"))
+            if (ContainsIgnoreCase(lastRunSummary, "success") || ContainsIgnoreCase(lastRunSummary, "completed"))
             {
                 return FittingExecutionState.Completed;
             }
 
-            if (lastRunSummary.Contains("Failed") || lastRunSummary.Contains("Error"))
+            if (ContainsIgnoreCase(lastRunSummary, "cancelled") || ContainsIgnoreCase(lastRunSummary, "canceled"))
+            {
+                return FittingExecutionState.Cancelled;
+            }
+
+            if (ContainsIgnoreCase(lastRunSummary, "failed") || ContainsIgnoreCase(lastRunSummary, "error"))
             {
                 return FittingExecutionState.Error;
             }
 
             return FittingExecutionState.Idle;
+        }
+
+        private static bool ContainsIgnoreCase(string source, string value)
+        {
+            return source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

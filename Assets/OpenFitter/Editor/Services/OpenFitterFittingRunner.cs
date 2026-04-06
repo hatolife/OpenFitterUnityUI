@@ -83,7 +83,7 @@ namespace OpenFitter.Editor
             if (IsFitting && currentProcess != null && !currentProcess.HasExited)
             {
                 try { currentProcess.Kill(); } catch { }
-                FinishFitting(false, "Cancelled by user.");
+                FinishFitting(false, "Cancelled by user.", "Cancelled");
             }
         }
 
@@ -126,7 +126,7 @@ namespace OpenFitter.Editor
             }
         }
 
-        internal void FinishFitting(bool success, string message)
+        internal void FinishFitting(bool success, string message, string? statusOverride = null)
         {
             IsFitting = false;
             currentStrategy = null;
@@ -135,7 +135,7 @@ namespace OpenFitter.Editor
 
             LastRunSummary = message;
             OnLogReceived?.Invoke($"\n[System] {message}");
-            OnStatusChanged?.Invoke(success ? "Completed" : "Failed");
+            OnStatusChanged?.Invoke(statusOverride ?? (success ? "Completed" : "Failed"));
 
             OnStateChanged?.Invoke();
         }

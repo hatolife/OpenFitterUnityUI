@@ -7,6 +7,9 @@
         </ui:VisualElement>
         <ui:Label name="lbl-status" text="Status: -" style="margin-bottom: 4px; color: rgb(136, 136, 136); font-size: 11px; margin-top: 0; margin-right: 0; margin-left: 0;" />
         <ui:ProgressBar name="progress-bar" value="0" high-value="100" style="margin-top: 0; margin-right: 0; margin-bottom: 12px; margin-left: 0;" />
+        <ui:VisualElement style="flex-direction: row; justify-content: flex-end; margin-top: 0; margin-right: 0; margin-bottom: 8px; margin-left: 0;">
+            <ui:Button name="btn-cancel-fitting" text="キャンセル" class="danger-button" style="height: 30px; width: 120px;" />
+        </ui:VisualElement>
         <ui:ScrollView name="log-scroll-view" class="log-area" style="height: 350px;">
             <ui:TextField name="lbl-log" multiline="true" readonly="true" class="log-text" />
         </ui:ScrollView>

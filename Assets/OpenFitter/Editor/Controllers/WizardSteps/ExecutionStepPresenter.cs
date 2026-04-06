@@ -38,6 +38,7 @@ namespace OpenFitter.Editor
             fittingService.OnProgressChanged += OnProgressChanged;
             fittingService.OnStatusChanged += OnStatusChanged;
             fittingService.OnStepChanged += OnStepChanged;
+            stepView.OnCancelClicked += OnCancelClicked;
         }
 
         protected override void UnbindElements()
@@ -46,6 +47,7 @@ namespace OpenFitter.Editor
             fittingService.OnProgressChanged -= OnProgressChanged;
             fittingService.OnStatusChanged -= OnStatusChanged;
             fittingService.OnStepChanged -= OnStepChanged;
+            stepView.OnCancelClicked -= OnCancelClicked;
         }
 
         public override void OnEnter()
@@ -69,6 +71,7 @@ namespace OpenFitter.Editor
         {
             stepView.SetStatus(string.Format(I18n.Tr("Status: {0}"), fittingService.LastRunSummary));
             UpdateStatusBadge();
+            UpdateCancelButtonState();
         }
 
         private void OnLogReceived(string log)
@@ -93,6 +96,7 @@ namespace OpenFitter.Editor
         private void OnStatusChanged(string status)
         {
             UpdateStatusBadge();
+            UpdateCancelButtonState();
             InvokeStatusChanged();
 
             if (status == "Completed")
@@ -122,11 +126,30 @@ namespace OpenFitter.Editor
                 case FittingExecutionState.Error:
                     stepView.SetStatusBadge(I18n.Tr("Error"), "failed");
                     break;
+                case FittingExecutionState.Cancelled:
+                    stepView.SetStatusBadge(I18n.Tr("Cancelled"), "cancelled");
+                    break;
                 case FittingExecutionState.Idle:
                 default:
                     stepView.SetStatusBadge(I18n.Tr("Idle"), "");
                     break;
             }
+        }
+
+        private void UpdateCancelButtonState()
+        {
+            stepView.SetCancelButtonEnabled(fittingService.IsFitting);
+        }
+
+        private void OnCancelClicked()
+        {
+            if (!fittingService.IsFitting)
+            {
+                return;
+            }
+
+            fittingService.CancelFitting();
+            stepView.SetCancelButtonEnabled(false);
         }
 
         public override void Dispose()
